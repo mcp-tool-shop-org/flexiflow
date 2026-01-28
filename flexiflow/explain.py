@@ -82,7 +82,7 @@ class ConfigExplanation:
     # Pack info (v0.4.0+)
     packs: List[PackInfo] = field(default_factory=list)
     state_providers: Dict[str, str] = field(default_factory=dict)  # state_key -> pack_name
-    resolution_order: List[str] = field(default_factory=list)  # pack names in resolution order
+    pack_order: List[str] = field(default_factory=list)  # pack names in resolution order
 
     # Diagnostics
     warnings: List[Diagnostic] = field(default_factory=list)
@@ -122,9 +122,9 @@ class ConfigExplanation:
                     lines.append(f"    depends_on: {', '.join(pack.depends_on)}")
             lines.append("")
 
-            # Resolution order
-            if self.resolution_order:
-                lines.append(f"Resolution order: {' → '.join(self.resolution_order)}")
+            # Pack order (evaluation order for state lookup)
+            if self.pack_order:
+                lines.append(f"Pack order: {' → '.join(self.pack_order)}")
                 lines.append("")
 
         # States (sorted for deterministic output) - legacy section
@@ -291,7 +291,7 @@ def _populate_pack_info(
     result.state_providers = collect_provided_keys(loaded_packs)
 
     # Resolution order is pack list order (first pack wins for conflicts)
-    result.resolution_order = [p.name for p in loaded_packs]
+    result.pack_order = [p.name for p in loaded_packs]
 
 
 def explain(config: Union[str, Path, Dict[str, Any]]) -> ConfigExplanation:

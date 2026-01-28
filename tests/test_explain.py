@@ -459,8 +459,8 @@ class TestExplainPackInfo:
         assert "FixtureInitial" in result.state_providers
         assert result.state_providers["FixtureInitial"] == "mapping"
 
-    def test_resolution_order(self, tmp_path: Path):
-        """resolution_order shows pack order."""
+    def test_pack_order(self, tmp_path: Path):
+        """pack_order shows pack evaluation order."""
         config_file = tmp_path / "config.yaml"
         config_file.write_text(
             textwrap.dedent(
@@ -478,7 +478,7 @@ class TestExplainPackInfo:
         result = explain(config_file)
 
         assert result.is_valid
-        assert result.resolution_order == ["mapping"]
+        assert result.pack_order == ["mapping"]
 
     def test_format_includes_packs_section(self, tmp_path: Path):
         """format() includes Packs section when packs exist."""
@@ -502,7 +502,7 @@ class TestExplainPackInfo:
         assert "Packs:" in formatted
         assert "mapping:" in formatted
         assert "provides:" in formatted
-        assert "Resolution order:" in formatted
+        assert "Pack order:" in formatted
 
     def test_format_shows_provider_attribution(self, tmp_path: Path):
         """format() shows which pack provides each state."""
@@ -541,7 +541,7 @@ class TestExplainPackInfo:
         assert result.packs[0].name == "fixture"
         assert "FixtureState" in result.packs[0].provided_keys
 
-    def test_packs_list_resolution_order(self):
+    def test_packs_list_pack_order(self):
         """packs: list order determines resolution order."""
         config = {
             "name": "test_component",
@@ -552,7 +552,7 @@ class TestExplainPackInfo:
 
         result = explain(config)
 
-        assert result.resolution_order == ["fixture"]
+        assert result.pack_order == ["fixture"]
 
     def test_no_packs_when_no_states(self):
         """No pack info when config has no states or packs."""
@@ -567,7 +567,7 @@ class TestExplainPackInfo:
         assert result.is_valid
         assert result.packs == []
         assert result.state_providers == {}
-        assert result.resolution_order == []
+        assert result.pack_order == []
 
     def test_mapping_pack_has_no_transitions(self, tmp_path: Path):
         """MappingPack (from states:) has empty transitions."""
@@ -590,3 +590,31 @@ class TestExplainPackInfo:
         assert result.is_valid
         assert len(result.packs) == 1
         assert result.packs[0].transitions == []
+
+    def test_invalid_pack_path_makes_invalid(self):
+        """Pack loading errors make config invalid."""
+        config = {
+            "name": "test_component",
+            "packs": ["nonexistent.module:BadPack"],
+            "initial_state": "InitialState",
+            "rules": [],
+        }
+
+        result = explain(config)
+
+        assert not result.is_valid
+        assert any("Pack loading failed" in e.what for e in result.errors)
+
+    def test_invalid_packs_type_makes_invalid(self):
+        """packs: with wrong type makes config invalid."""
+        config = {
+            "name": "test_component",
+            "packs": "not_a_list",
+            "initial_state": "InitialState",
+            "rules": [],
+        }
+
+        result = explain(config)
+
+        assert not result.is_valid
+        assert any("packs" in e.what.lower() and "list" in e.what.lower() for e in result.errors)
