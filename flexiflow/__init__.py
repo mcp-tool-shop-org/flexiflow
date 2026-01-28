@@ -74,5 +74,6 @@ __all__ = [
 # Internal imports available but not in __all__:
 # - load_packs, collect_provided_keys: internal pack loading machinery
 # - MappingPack: internal adapter for legacy states: dict format
+# - PackInfo: internal dataclass for ConfigExplanation.packs
 
 __version__ = "0.3.3"

@@ -14,7 +14,9 @@ from typing import Any, Dict, List, Optional, Union
 import yaml
 
 from .errors import ErrorContext, FlexiFlowError
+from .pack_loader import collect_provided_keys, load_packs
 from .state_machine import DEFAULT_REGISTRY, State
+from .statepack import StatePack, TransitionSpec
 
 
 @dataclass
@@ -52,6 +54,16 @@ class StateResolution:
 
 
 @dataclass
+class PackInfo:
+    """Information about a single StatePack."""
+
+    name: str
+    provided_keys: List[str]  # Sorted list of state keys this pack provides
+    transitions: List[TransitionSpec]  # Transitions defined by this pack
+    depends_on: List[str]  # Sorted list of pack dependencies
+
+
+@dataclass
 class ConfigExplanation:
     """Structured explanation of a FlexiFlow config."""
 
@@ -63,9 +75,14 @@ class ConfigExplanation:
     initial_state: Optional[str] = None
     rules_count: int = 0
 
-    # State resolution
+    # State resolution (legacy per-state info)
     states: List[StateResolution] = field(default_factory=list)
     builtin_states: List[str] = field(default_factory=list)
+
+    # Pack info (v0.4.0+)
+    packs: List[PackInfo] = field(default_factory=list)
+    state_providers: Dict[str, str] = field(default_factory=dict)  # state_key -> pack_name
+    pack_order: List[str] = field(default_factory=list)  # pack names in resolution order
 
     # Diagnostics
     warnings: List[Diagnostic] = field(default_factory=list)
@@ -92,15 +109,36 @@ class ConfigExplanation:
         lines.append(f"  rules: {self.rules_count} rule(s)")
         lines.append("")
 
-        # States (sorted for deterministic output)
+        # Packs (v0.4.0+)
+        if self.packs:
+            lines.append("Packs:")
+            for pack in self.packs:
+                keys_str = ", ".join(pack.provided_keys) if pack.provided_keys else "(none)"
+                lines.append(f"  {pack.name}:")
+                lines.append(f"    provides: {keys_str}")
+                if pack.transitions:
+                    lines.append(f"    transitions: {len(pack.transitions)} defined")
+                if pack.depends_on:
+                    lines.append(f"    depends_on: {', '.join(pack.depends_on)}")
+            lines.append("")
+
+            # Pack order (evaluation order for state lookup)
+            if self.pack_order:
+                lines.append(f"Pack order: {' → '.join(self.pack_order)}")
+                lines.append("")
+
+        # States (sorted for deterministic output) - legacy section
         lines.append("States:")
         if self.states:
             for s in sorted(self.states, key=lambda x: x.key):
                 status = "✓" if s.resolved and s.is_state_subclass else "✗"
+                # Include provider info if available
+                provider = self.state_providers.get(s.key)
+                provider_suffix = f" (from {provider})" if provider else ""
                 if s.dotted_path:
-                    lines.append(f"  {status} {s.key}: {s.dotted_path}")
+                    lines.append(f"  {status} {s.key}: {s.dotted_path}{provider_suffix}")
                 else:
-                    lines.append(f"  {status} {s.key}")
+                    lines.append(f"  {status} {s.key}{provider_suffix}")
                 if s.error:
                     lines.append(f"      Error: {s.error}")
         else:
@@ -158,6 +196,102 @@ def _try_import_symbol(dotted: str) -> tuple[Any, Optional[str]]:
         return getattr(module, symbol_name), None
     except AttributeError:
         return None, f"Symbol '{symbol_name}' not found in '{module_path}'"
+
+
+def _populate_pack_info(
+    result: ConfigExplanation,
+    data: Dict[str, Any],
+    states_mapping: Optional[Dict[str, str]],
+) -> None:
+    """Populate pack-related fields in the explanation.
+
+    Uses load_packs internally to get the normalized pack list,
+    then extracts info for display without any side effects.
+    """
+    from .errors import ConfigError, FlexiFlowError
+
+    # Check if config uses states or packs
+    has_states = states_mapping is not None and len(states_mapping) > 0
+    has_packs = "packs" in data and data["packs"] is not None
+
+    # Early return if no state sources
+    if not has_states and not has_packs:
+        return
+
+    # Try to load packs (catches errors gracefully)
+    try:
+        if has_states:
+            # Build a dict mapping keys to classes (for valid states only)
+            resolved_states = {}
+            for s in result.states:
+                if s.resolved and s.is_state_subclass and s.dotted_path:
+                    symbol, _ = _try_import_symbol(s.dotted_path)
+                    if symbol:
+                        resolved_states[s.key] = symbol
+
+            if resolved_states:
+                loaded_packs = load_packs(states=resolved_states)
+            else:
+                return
+        else:
+            # packs: list - try to load them
+            packs_list = data.get("packs", [])
+            if not isinstance(packs_list, list):
+                result.errors.append(
+                    Diagnostic(
+                        level="error",
+                        what="Field 'packs' must be a list",
+                        why=f"Got {type(packs_list).__name__}.",
+                        fix="Use format: packs:\n  - 'module:PackClass'",
+                        context={"path": result.config_path},
+                    )
+                )
+                return
+            loaded_packs = load_packs(packs=packs_list)
+    except (ConfigError, FlexiFlowError) as e:
+        # Pack loading failed - add as diagnostic
+        ctx = getattr(e, "context", None)
+        ctx_dict = ctx.items if ctx and hasattr(ctx, "items") else {}
+        result.errors.append(
+            Diagnostic(
+                level="error",
+                what=f"Pack loading failed: {e.what if hasattr(e, 'what') else str(e)}",
+                why=getattr(e, "why", None),
+                fix=getattr(e, "fix", None),
+                context=ctx_dict,
+            )
+        )
+        return
+    except Exception as e:
+        # Unexpected error
+        result.errors.append(
+            Diagnostic(
+                level="error",
+                what=f"Unexpected error loading packs: {e}",
+                fix="Check your pack definitions and import paths.",
+            )
+        )
+        return
+
+    # Populate pack info
+    for pack in loaded_packs:
+        provided = pack.provides()
+        transitions = pack.transitions()
+        depends = pack.depends_on()
+
+        pack_info = PackInfo(
+            name=pack.name,
+            provided_keys=sorted(provided.keys()),
+            transitions=transitions,
+            depends_on=sorted(depends),
+        )
+        result.packs.append(pack_info)
+
+    # Build state_providers mapping
+    result.state_providers = collect_provided_keys(loaded_packs)
+
+    # Resolution order is pack list order (first pack wins for conflicts)
+    result.pack_order = [p.name for p in loaded_packs]
 
 
 def explain(config: Union[str, Path, Dict[str, Any]]) -> ConfigExplanation:
@@ -354,6 +488,10 @@ def _validate_config_data(
                         is_state_subclass=True,
                     )
                 )
+
+    # Populate pack info (v0.4.0+)
+    # Use load_packs to normalize states/packs into StatePack list
+    _populate_pack_info(result, data, states_mapping)
 
     # Validate initial_state
     initial_state = data.get("initial_state", "InitialState")
