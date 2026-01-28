@@ -22,16 +22,31 @@ class AsyncComponent:
         self.rules.extend(new_rules)
 
     async def handle_message(self, message: Dict[str, Any]) -> None:
-        proceeded = await self.state_machine.handle_message(message, self)
-        if proceeded and self.logger:
-            self.logger.info(
-                "%s transitioned to %s",
-                self.name,
-                self.state_machine.current_state.__class__.__name__,
+        # Capture state before handling for observability
+        from_state = self.state_machine.current_state.__class__.__name__
+
+        # Emit message received event (fire-and-forget, never blocks core logic)
+        if self.event_bus:
+            await self.event_bus.publish(
+                "component.message.received",
+                {"component": self.name, "message": message},
             )
 
-        if proceeded and self.event_bus:
-            await self.event_bus.publish(
-                "state.changed",
-                {"component": self.name, "state": self.state_machine.current_state.__class__.__name__},
-            )
+        proceeded = await self.state_machine.handle_message(message, self)
+
+        if proceeded:
+            to_state = self.state_machine.current_state.__class__.__name__
+
+            if self.logger:
+                self.logger.info(
+                    "%s transitioned to %s",
+                    self.name,
+                    to_state,
+                )
+
+            # Emit state changed event with from/to states
+            if self.event_bus:
+                await self.event_bus.publish(
+                    "state.changed",
+                    {"component": self.name, "from_state": from_state, "to_state": to_state},
+                )
