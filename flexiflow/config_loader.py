@@ -6,6 +6,9 @@ from typing import Any, Dict, List
 
 import yaml
 
+from .imports import load_symbol
+from .state_machine import DEFAULT_REGISTRY, State
+
 
 @dataclass(frozen=True)
 class ComponentConfig:
@@ -41,6 +44,20 @@ class ConfigLoader:
         initial_state = data.get("initial_state", "InitialState")
         if not isinstance(initial_state, str):
             raise ValueError("'initial_state' must be a string")
+
+        # Handle dotted path imports (e.g., "mypkg.states:MyState")
+        if ":" in initial_state:
+            state_cls = load_symbol(initial_state)
+
+            # Validate it's a State subclass
+            if not isinstance(state_cls, type) or not issubclass(state_cls, State):
+                raise ValueError(
+                    f"initial_state must point to a State subclass, got {state_cls!r}"
+                )
+
+            # Register under class name and normalize
+            DEFAULT_REGISTRY.register(state_cls.__name__, state_cls)
+            initial_state = state_cls.__name__
 
         return ComponentConfig(name=name, rules=rules, initial_state=initial_state)
 

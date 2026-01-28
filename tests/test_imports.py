@@ -1,0 +1,136 @@
+"""Tests for dotted path imports and custom state loading."""
+
+from __future__ import annotations
+
+import textwrap
+from pathlib import Path
+
+import pytest
+
+from flexiflow.imports import load_symbol
+from flexiflow.config_loader import ConfigLoader
+from flexiflow.state_machine import DEFAULT_REGISTRY, StateMachine
+
+
+# --- load_symbol tests ---
+
+
+def test_load_symbol_valid():
+    """load_symbol loads a class from a dotted path."""
+    cls = load_symbol("fixture_states:FixtureInitial")
+    assert cls.__name__ == "FixtureInitial"
+
+
+def test_load_symbol_missing_colon():
+    """load_symbol raises ValueError if ':' is missing."""
+    with pytest.raises(ValueError, match="Expected format"):
+        load_symbol("fixture_states.FixtureInitial")
+
+
+def test_load_symbol_empty_parts():
+    """load_symbol raises ValueError if module or symbol is empty."""
+    with pytest.raises(ValueError, match="Expected format"):
+        load_symbol(":FixtureInitial")
+
+    with pytest.raises(ValueError, match="Expected format"):
+        load_symbol("fixture_states:")
+
+
+def test_load_symbol_module_not_found():
+    """load_symbol raises ValueError if module doesn't exist."""
+    with pytest.raises(ValueError, match="Failed to import module"):
+        load_symbol("nonexistent.module:SomeClass")
+
+
+def test_load_symbol_symbol_not_found():
+    """load_symbol raises ValueError if symbol doesn't exist in module."""
+    with pytest.raises(ValueError, match="has no symbol"):
+        load_symbol("fixture_states:DoesNotExist")
+
+
+# --- ConfigLoader dotted path tests ---
+
+
+def test_dotted_initial_state_registers_and_normalizes(tmp_path: Path):
+    """ConfigLoader with dotted initial_state registers and normalizes to class name."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        textwrap.dedent(
+            """\
+            name: test_component
+            rules: []
+            initial_state: "fixture_states:FixtureInitial"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    cfg = ConfigLoader.load_component_config(config_file)
+
+    # Normalized to class name
+    assert cfg.initial_state == "FixtureInitial"
+
+    # Registered in default registry
+    assert "FixtureInitial" in DEFAULT_REGISTRY.names()
+
+    # Can create state machine from it
+    sm = StateMachine.from_name(cfg.initial_state)
+    assert sm.current_state.__class__.__name__ == "FixtureInitial"
+
+
+def test_dotted_initial_state_invalid_symbol_errors(tmp_path: Path):
+    """ConfigLoader raises ValueError for non-existent symbol."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        textwrap.dedent(
+            """\
+            name: test_component
+            rules: []
+            initial_state: "fixture_states:DoesNotExist"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="has no symbol"):
+        ConfigLoader.load_component_config(config_file)
+
+
+def test_dotted_initial_state_not_a_state_errors(tmp_path: Path):
+    """ConfigLoader raises ValueError if symbol is not a State subclass."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        textwrap.dedent(
+            """\
+            name: test_component
+            rules: []
+            initial_state: "fixture_states:NotAState"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="must point to a State subclass"):
+        ConfigLoader.load_component_config(config_file)
+
+
+def test_plain_initial_state_still_works(tmp_path: Path):
+    """ConfigLoader still works with plain state names (no dotted path)."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(
+        textwrap.dedent(
+            """\
+            name: test_component
+            rules: []
+            initial_state: "InitialState"
+            """
+        ),
+        encoding="utf-8",
+    )
+
+    cfg = ConfigLoader.load_component_config(config_file)
+    assert cfg.initial_state == "InitialState"
+
+    # Can still create from default registry
+    sm = StateMachine.from_name(cfg.initial_state)
+    assert sm.current_state.__class__.__name__ == "InitialState"

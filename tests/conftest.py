@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import sys
 import textwrap
 from pathlib import Path
 
 import pytest
+
+# Ensure tests directory is on path for fixture_states imports
+_tests_dir = Path(__file__).parent
+if str(_tests_dir) not in sys.path:
+    sys.path.insert(0, str(_tests_dir))
 
 
 @pytest.fixture
