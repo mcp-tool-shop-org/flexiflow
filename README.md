@@ -127,3 +127,39 @@ async def my_handler(data):
 ```
 
 This keeps retry policy out of the engine and at the handler boundary where it belongs.
+
+## Observability
+
+FlexiFlow emits structured events for observability. Subscribe to these to build monitoring, metrics, or debugging tools.
+
+| Event | When | Payload |
+|-------|------|---------|
+| `engine.component.registered` | Component registered with engine | `{component}` |
+| `component.message.received` | Message received by component | `{component, message}` |
+| `state.changed` | State machine transition | `{component, from_state, to_state}` |
+| `event.handler.failed` | Handler raised exception (continue mode) | `{event_name, component_name, exception}` |
+
+### Example: Logging all state changes
+
+```python
+async def log_transitions(data):
+    print(f"{data['component']}: {data['from_state']} → {data['to_state']}")
+
+await bus.subscribe("state.changed", "logger", log_transitions)
+```
+
+### Design notes
+
+- Observability events are **fire-and-forget** — they never block core execution
+- `event.handler.failed` does **not** fire recursively (handlers for this event that fail are swallowed)
+- These events are separate from logging — use both as needed
+
+## Custom States
+
+Load custom state classes via dotted paths:
+
+```yaml
+initial_state: "mypkg.states:MyInitialState"
+```
+
+The class must be a `State` subclass. It will be auto-registered under its class name.

@@ -147,10 +147,14 @@ class AsyncEventManager:
                     if isinstance(r, Exception):
                         raise r
 
-            if self._logger:
-                for r in results:
-                    if isinstance(r, Exception):
+            # Log and emit failure events for exceptions (continue mode)
+            for s, r in zip(ordered, results):
+                if isinstance(r, Exception):
+                    if self._logger:
                         self._logger.error("Error handling event %s: %s", event_name, r)
+                    # Emit handler.failed event (avoid recursion by not emitting for handler.failed itself)
+                    if event_name != "event.handler.failed":
+                        await self._emit_handler_failed(event_name, s.component_name, r)
             return
 
         # sequential delivery
@@ -160,5 +164,28 @@ class AsyncEventManager:
             except Exception as e:
                 if self._logger:
                     self._logger.error("Error handling event %s: %s", event_name, e)
+                # Emit handler.failed event (avoid recursion by not emitting for handler.failed itself)
+                if on_error == "continue" and event_name != "event.handler.failed":
+                    await self._emit_handler_failed(event_name, s.component_name, e)
                 if on_error == "raise":
                     raise
+
+    async def _emit_handler_failed(
+        self,
+        event_name: str,
+        component_name: str,
+        exception: Exception,
+    ) -> None:
+        """Emit event.handler.failed observability event. Fire-and-forget, never raises."""
+        try:
+            await self.publish(
+                "event.handler.failed",
+                {
+                    "event_name": event_name,
+                    "component_name": component_name,
+                    "exception": repr(exception),
+                },
+            )
+        except Exception:
+            # Swallow any errors from observability handlers to avoid cascading failures
+            pass
