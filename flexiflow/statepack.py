@@ -157,3 +157,55 @@ class StatePack(Protocol):
         Return an empty set if this pack has no external dependencies.
         """
         ...
+
+
+class MappingPack:
+    """StatePack adapter for states: mapping configs.
+
+    Wraps a dict[str, type] (state key -> state class) into the StatePack
+    interface. Used internally to provide backward compatibility with
+    v0.3.x states: config format.
+
+    This pack:
+    - Has name "mapping" (anonymous pack)
+    - provides() returns specs derived from the dict
+    - transitions() returns empty (not declaratively defined)
+    - depends_on() returns empty (no dependency tracking for legacy format)
+
+    Example:
+        mapping = {"Idle": IdleState, "Active": ActiveState}
+        pack = MappingPack(mapping)
+
+        pack.name  # "mapping"
+        pack.provides()  # {"Idle": StateSpec(IdleState), ...}
+        pack.transitions()  # []
+        pack.depends_on()  # set()
+    """
+
+    def __init__(self, states: Dict[str, type]) -> None:
+        """Create a MappingPack from a state key -> class mapping.
+
+        Args:
+            states: Mapping from state registry keys to State subclasses.
+        """
+        self._states = states
+
+    @property
+    def name(self) -> str:
+        """Pack identifier - always 'mapping' for legacy configs."""
+        return "mapping"
+
+    def provides(self) -> Dict[str, StateSpec]:
+        """States this pack provides, derived from the mapping.
+
+        Returns keys in sorted order for deterministic output.
+        """
+        return {key: StateSpec(self._states[key]) for key in sorted(self._states)}
+
+    def transitions(self) -> List[TransitionSpec]:
+        """Empty - transitions not declaratively defined in mapping format."""
+        return []
+
+    def depends_on(self) -> Set[str]:
+        """Empty - no dependency tracking for legacy format."""
+        return set()
