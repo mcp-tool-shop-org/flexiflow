@@ -50,7 +50,8 @@ class TestMermaidGeneration:
         exp = ConfigExplanation(config_path="(test)")
         result = _generate_mermaid(exp)
         assert result.startswith("flowchart LR")
-        # Should have resolution policy in meta
+        # Should have legend and resolution policy in meta
+        assert "%% Edge labels: on_message [guard]" in result
         assert "initial_state_resolution" in result
 
     def test_pack_order_in_meta_comments(self):

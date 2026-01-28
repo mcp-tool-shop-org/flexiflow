@@ -74,7 +74,8 @@ def _generate_mermaid(exp: ConfigExplanation) -> str:
     lines.append("flowchart LR")
     lines.append("")
 
-    # Meta comments
+    # Legend and meta comments
+    lines.append("%% Edge labels: on_message [guard]")
     if exp.pack_order:
         lines.append(f"%% pack_order: {', '.join(exp.pack_order)}")
     if exp.initial_state_resolution:
