@@ -134,14 +134,15 @@ def _generate_mermaid(exp: ConfigExplanation) -> str:
             from_id = _get_node_id(trans.from_state, known_states, unknown_states)
             to_id = _get_node_id(trans.to_state, known_states, unknown_states)
 
-            # Escape pipe characters in message labels
-            label = trans.on_message.replace("|", "\\|")
+            # Build label - escape quotes and special chars for Mermaid
+            label = trans.on_message.replace('"', '\\"')
 
             # Add guard if present
             if trans.guard:
                 label = f"{label} [{trans.guard}]"
 
-            lines.append(f"{from_id} -->|{label}| {to_id}")
+            # Always quote edge labels for Mermaid 11.x compatibility
+            lines.append(f'{from_id} -->|"{label}"| {to_id}')
 
         lines.append("")
 

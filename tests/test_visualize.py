@@ -129,7 +129,7 @@ class TestMermaidGeneration:
             ],
         )
         result = _generate_mermaid(exp)
-        assert "SessionIdle -->|start| SessionActive" in result
+        assert 'SessionIdle -->|"start"| SessionActive' in result
 
     def test_multiple_transitions(self):
         """Multiple transitions create multiple edges."""
@@ -148,8 +148,8 @@ class TestMermaidGeneration:
             ],
         )
         result = _generate_mermaid(exp)
-        assert "SessionIdle -->|start| SessionActive" in result
-        assert "SessionActive -->|complete| SessionIdle" in result
+        assert 'SessionIdle -->|"start"| SessionActive' in result
+        assert 'SessionActive -->|"complete"| SessionIdle' in result
 
     def test_transition_with_guard(self):
         """Transitions with guards include guard in label."""
@@ -169,7 +169,7 @@ class TestMermaidGeneration:
             ],
         )
         result = _generate_mermaid(exp)
-        assert "-->|timeout [is_expired]|" in result
+        assert '-->|"timeout [is_expired]"|' in result
 
 
 class TestUnknownStates:
@@ -313,10 +313,10 @@ class TestIntegration:
         assert "SessionIdle" in result
         assert "SessionActive" in result
 
-        # Check transitions
-        assert "-->|start|" in result
-        assert "-->|complete|" in result
-        assert "-->|timeout [is_expired]|" in result
+        # Check transitions (quoted labels for Mermaid 11.x)
+        assert '-->|"start"|' in result
+        assert '-->|"complete"|' in result
+        assert '-->|"timeout [is_expired]"|' in result
 
     def test_visualize_broken_pack_shows_unknown(self):
         """Visualize pack with unknown state references."""
@@ -358,8 +358,8 @@ class TestIntegration:
 class TestEdgeCases:
     """Edge case tests."""
 
-    def test_pipe_in_message_escaped(self):
-        """Pipe characters in message labels are escaped."""
+    def test_quotes_in_message_escaped(self):
+        """Quote characters in message labels are escaped."""
         exp = ConfigExplanation(
             config_path="(test)",
             packs=[
@@ -367,15 +367,15 @@ class TestEdgeCases:
                     name="test",
                     provided_keys=["A", "B"],
                     transitions=[
-                        TransitionSpec("A", "choice|option", "B"),
+                        TransitionSpec("A", 'say "hello"', "B"),
                     ],
                     depends_on=[],
                 ),
             ],
         )
         result = _generate_mermaid(exp)
-        # Pipe should be escaped
-        assert r"choice\|option" in result
+        # Quotes should be escaped, label should be quoted
+        assert r'-->|"say \"hello\""|' in result
 
     def test_no_trailing_newline(self):
         """Output doesn't end with trailing newlines."""
