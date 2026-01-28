@@ -407,3 +407,186 @@ class TestExplainNoSideEffects:
 
         # FixtureInitial should NOT have been added
         assert "FixtureInitial" not in new_states or "FixtureInitial" in initial_states
+
+
+class TestExplainPackInfo:
+    """Tests for pack info in explain() output (v0.4.0+)."""
+
+    def test_states_mapping_populates_pack_info(self, tmp_path: Path):
+        """Config with states: mapping populates packs field."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                  AnotherFixture: "fixture_states:AnotherFixtureState"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+
+        assert result.is_valid
+        assert len(result.packs) == 1
+        assert result.packs[0].name == "mapping"
+        assert "AnotherFixture" in result.packs[0].provided_keys
+        assert "FixtureInitial" in result.packs[0].provided_keys
+
+    def test_state_providers_mapping(self, tmp_path: Path):
+        """state_providers maps state keys to pack names."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+
+        assert result.is_valid
+        assert "FixtureInitial" in result.state_providers
+        assert result.state_providers["FixtureInitial"] == "mapping"
+
+    def test_resolution_order(self, tmp_path: Path):
+        """resolution_order shows pack order."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+
+        assert result.is_valid
+        assert result.resolution_order == ["mapping"]
+
+    def test_format_includes_packs_section(self, tmp_path: Path):
+        """format() includes Packs section when packs exist."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+        formatted = result.format()
+
+        assert "Packs:" in formatted
+        assert "mapping:" in formatted
+        assert "provides:" in formatted
+        assert "Resolution order:" in formatted
+
+    def test_format_shows_provider_attribution(self, tmp_path: Path):
+        """format() shows which pack provides each state."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+        formatted = result.format()
+
+        assert "(from mapping)" in formatted
+
+    def test_packs_list_config(self):
+        """Config with packs: list populates pack info."""
+        config = {
+            "name": "test_component",
+            "packs": ["fixture_states:FixturePack"],
+            "initial_state": "FixtureState",
+            "rules": [],
+        }
+
+        result = explain(config)
+
+        # Pack should be loaded
+        assert len(result.packs) == 1
+        assert result.packs[0].name == "fixture"
+        assert "FixtureState" in result.packs[0].provided_keys
+
+    def test_packs_list_resolution_order(self):
+        """packs: list order determines resolution order."""
+        config = {
+            "name": "test_component",
+            "packs": ["fixture_states:FixturePack"],
+            "initial_state": "FixtureState",
+            "rules": [],
+        }
+
+        result = explain(config)
+
+        assert result.resolution_order == ["fixture"]
+
+    def test_no_packs_when_no_states(self):
+        """No pack info when config has no states or packs."""
+        config = {
+            "name": "test_component",
+            "initial_state": "InitialState",
+            "rules": [],
+        }
+
+        result = explain(config)
+
+        assert result.is_valid
+        assert result.packs == []
+        assert result.state_providers == {}
+        assert result.resolution_order == []
+
+    def test_mapping_pack_has_no_transitions(self, tmp_path: Path):
+        """MappingPack (from states:) has empty transitions."""
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(
+            textwrap.dedent(
+                """\
+                name: test_component
+                states:
+                  FixtureInitial: "fixture_states:FixtureInitial"
+                initial_state: FixtureInitial
+                rules: []
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = explain(config_file)
+
+        assert result.is_valid
+        assert len(result.packs) == 1
+        assert result.packs[0].transitions == []

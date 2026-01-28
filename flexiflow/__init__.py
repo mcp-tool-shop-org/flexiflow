@@ -38,7 +38,7 @@ from .errors import (
     PersistenceError,
     StateError,
 )
-from .explain import ConfigExplanation, Diagnostic, explain
+from .explain import ConfigExplanation, Diagnostic, PackInfo, explain
 from .pack_loader import collect_provided_keys, load_packs
 from .state_machine import DEFAULT_REGISTRY, State, StateRegistry, StateMachine
 from .statepack import MappingPack, StateSpec, StatePack, TransitionSpec
@@ -69,6 +69,7 @@ __all__ = [
     "explain",
     "ConfigExplanation",
     "Diagnostic",
+    "PackInfo",
 ]
 
 # Internal imports available but not in __all__:
