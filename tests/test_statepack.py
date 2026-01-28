@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flexiflow.statepack import StateSpec, StatePack, TransitionSpec
+from flexiflow.statepack import MappingPack, StateSpec, StatePack, TransitionSpec
 
 
 class DummyState:
@@ -250,3 +250,85 @@ class TestImportStability:
         assert "on_message" in field_names
         assert "to_state" in field_names
         assert "guard" in field_names
+
+
+class TestMappingPack:
+    """Tests for MappingPack adapter."""
+
+    def test_create_empty(self):
+        """MappingPack can be created with empty dict."""
+        pack = MappingPack({})
+        assert pack.name == "mapping"
+        assert pack.provides() == {}
+        assert pack.transitions() == []
+        assert pack.depends_on() == set()
+
+    def test_create_with_states(self):
+        """MappingPack wraps states dict correctly."""
+        mapping = {"Idle": DummyState, "Active": AnotherState}
+        pack = MappingPack(mapping)
+
+        assert pack.name == "mapping"
+
+        provides = pack.provides()
+        assert len(provides) == 2
+        assert "Idle" in provides
+        assert "Active" in provides
+        assert provides["Idle"].state_class is DummyState
+        assert provides["Active"].state_class is AnotherState
+
+    def test_provides_returns_statespecs(self):
+        """MappingPack.provides() returns StateSpec objects."""
+        pack = MappingPack({"Test": DummyState})
+
+        provides = pack.provides()
+        spec = provides["Test"]
+
+        assert isinstance(spec, StateSpec)
+        assert spec.state_class is DummyState
+        assert spec.description is None  # No description in mapping format
+
+    def test_transitions_always_empty(self):
+        """MappingPack.transitions() always returns empty list."""
+        pack = MappingPack({"Idle": DummyState, "Active": AnotherState})
+        assert pack.transitions() == []
+
+    def test_depends_on_always_empty(self):
+        """MappingPack.depends_on() always returns empty set."""
+        pack = MappingPack({"Idle": DummyState})
+        assert pack.depends_on() == set()
+
+    def test_conforms_to_statepack_interface(self):
+        """MappingPack has all StatePack methods."""
+        pack = MappingPack({"Test": DummyState})
+
+        # Verify all protocol methods exist and work
+        assert hasattr(pack, "name")
+        assert hasattr(pack, "provides")
+        assert hasattr(pack, "transitions")
+        assert hasattr(pack, "depends_on")
+
+        assert isinstance(pack.name, str)
+        assert isinstance(pack.provides(), dict)
+        assert isinstance(pack.transitions(), list)
+        assert isinstance(pack.depends_on(), set)
+
+    def test_provides_is_fresh_dict(self):
+        """MappingPack.provides() returns fresh dict each call."""
+        pack = MappingPack({"Test": DummyState})
+
+        provides1 = pack.provides()
+        provides2 = pack.provides()
+
+        assert provides1 == provides2
+        assert provides1 is not provides2  # Fresh dict each time
+
+    def test_provides_keys_sorted(self):
+        """MappingPack.provides() returns keys in sorted order."""
+        # Insert in non-sorted order
+        pack = MappingPack({"Zebra": DummyState, "Alpha": AnotherState, "Middle": DummyState})
+
+        provides = pack.provides()
+        keys = list(provides.keys())
+
+        assert keys == ["Alpha", "Middle", "Zebra"]
