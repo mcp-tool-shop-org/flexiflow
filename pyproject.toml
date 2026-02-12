@@ -1,6 +1,6 @@
 [project]
 name = "flexiflow"
-version = "0.3.1"
+version = "0.3.2"
 description = "A small async component engine with events, state machines, and a minimal CLI."
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0"]
@@ -14,8 +14,17 @@ dev = [
 reload = ["watchfiles>=0.21"]
 api = ["fastapi>=0.110", "uvicorn>=0.27"]
 
+[project.urls]
+Homepage = "https://github.com/mcp-tool-shop-org/flexiflow"
+Repository = "https://github.com/mcp-tool-shop-org/flexiflow"
+Issues = "https://github.com/mcp-tool-shop-org/flexiflow/issues"
+
 [project.scripts]
 flexiflow = "flexiflow.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
