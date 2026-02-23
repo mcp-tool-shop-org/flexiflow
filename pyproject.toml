@@ -1,6 +1,6 @@
 [project]
 name = "flexiflow"
-version = "0.3.3"
+version = "0.3.4"
 description = "A small async component engine with events, state machines, and a minimal CLI."
 readme = "README.md"
 license = "MIT"

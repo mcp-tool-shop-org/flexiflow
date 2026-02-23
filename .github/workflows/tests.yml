@@ -2,7 +2,26 @@ name: tests
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "**/*.py"
+      - "pyproject.toml"
+      - "setup.cfg"
+      - "requirements*.txt"
+      - ".github/workflows/**"
   pull_request:
+    branches: [main]
+    paths:
+      - "**/*.py"
+      - "pyproject.toml"
+      - "setup.cfg"
+      - "requirements*.txt"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:

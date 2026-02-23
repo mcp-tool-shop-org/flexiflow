@@ -4,6 +4,8 @@
 
 # flexiflow
 
+[![CI](https://github.com/mcp-tool-shop-org/flexiflow/actions/workflows/tests.yml/badge.svg)](https://github.com/mcp-tool-shop-org/flexiflow/actions/workflows/tests.yml)
+
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
 
 [![PyPI version](https://img.shields.io/pypi/v/flexiflow)](https://pypi.org/project/flexiflow/)
