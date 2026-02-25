@@ -40,6 +40,9 @@ Documentation = "https://github.com/mcp-tool-shop-org/flexiflow#readme"
 [project.scripts]
 flexiflow = "flexiflow.cli:main"
 
+[tool.setuptools.packages.find]
+include = ["flexiflow*"]
+
 [build-system]
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
