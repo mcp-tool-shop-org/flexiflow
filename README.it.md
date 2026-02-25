@@ -25,33 +25,33 @@
     </a>
 </p>
 
-**A small async component engine with events, state machines, and a minimal CLI.**
+**Un piccolo motore di componenti asincroni con eventi, macchine a stati e una CLI minimalista.**
 
 ---
 
-## Why FlexiFlow?
+## Perché FlexiFlow?
 
-Most workflow engines are heavyweight, opinionated, and assume you want a DAG runner.
-FlexiFlow is none of those things. It gives you:
+La maggior parte dei motori di workflow sono complessi, predefiniti e presuppongono che si desideri un esecutore di grafi aciclici (DAG).
+FlexiFlow non è affatto così. Offre:
 
-- **Components** with declarative rules and pluggable state machines
-- **An async event bus** with priority, filters, and sequential or concurrent delivery
-- **Structured logging** with correlation IDs baked in
-- **Persistence** (JSON for dev, SQLite for production) with snapshot history and pruning
-- **A minimal CLI** so you can demo and debug without writing a harness
-- **Config introspection** (`explain()`) to validate before you run
+- **Componenti** con regole dichiarative e macchine a stati modulari.
+- **Un bus di eventi asincrono** con priorità, filtri e consegna sequenziale o concorrente.
+- **Logging strutturato** con ID di correlazione integrati.
+- **Persistenza** (JSON per lo sviluppo, SQLite per la produzione) con cronologia degli snapshot e funzionalità di pruning.
+- **Una CLI minimalista** per poter eseguire demo e debug senza scrivere codice aggiuntivo.
+- **Introspezione della configurazione** (`explain()`) per la validazione prima dell'esecuzione.
 
-All in under 2,000 lines of pure Python. No heavy dependencies. No magic.
+Il tutto in meno di 2.000 righe di puro Python. Nessuna dipendenza pesante. Nessuna magia.
 
 ---
 
-## Install
+## Installazione
 
 ```bash
 pip install flexiflow
 ```
 
-With optional extras:
+Con opzioni aggiuntive:
 
 ```bash
 pip install flexiflow[reload]   # hot-reload with watchfiles
@@ -61,7 +61,7 @@ pip install flexiflow[dev]      # pytest + coverage
 
 ---
 
-## Quick Start
+## Guida rapida
 
 ### CLI
 
@@ -92,13 +92,13 @@ await engine.handle_message(component.name, "start")
 await engine.handle_message(component.name, "confirm", content="confirmed")
 ```
 
-You can also set `FLEXIFLOW_CONFIG=/path/to/config.yaml` and omit `--config` from the CLI.
+È anche possibile impostare `FLEXIFLOW_CONFIG=/path/to/config.yaml` e omettere `--config` dalla CLI.
 
 ---
 
-## API Overview
+## Panoramica dell'API
 
-### Event Bus
+### Bus di eventi
 
 ```python
 # Subscribe with priority (1=highest, 5=lowest)
@@ -113,19 +113,19 @@ bus.unsubscribe(handle)
 bus.unsubscribe_all("my_component")
 ```
 
-**Error policies:** `continue` (log and keep going) or `raise` (fail fast).
+**Politiche di errore:** `continue` (registra e continua) o `raise` (fallimento immediato).
 
-### State Machines
+### Macchine a stati
 
-Built-in message types: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
+Tipi di messaggi predefiniti: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
 
-Load custom states via dotted paths:
+Caricare stati personalizzati tramite percorsi puntati:
 
 ```yaml
 initial_state: "mypkg.states:MyInitialState"
 ```
 
-Or register entire state packs:
+Oppure registrare interi pacchetti di stati:
 
 ```yaml
 states:
@@ -135,16 +135,16 @@ states:
 initial_state: InitialState
 ```
 
-### Observability Events
+### Eventi di osservabilità
 
 | Event | When | Payload |
-|-------|------|---------|
-| `engine.component.registered` | Component registered | `{component}` |
-| `component.message.received` | Message received | `{component, message}` |
-| `state.changed` | State transition | `{component, from_state, to_state}` |
-| `event.handler.failed` | Handler exception (continue mode) | `{event_name, component_name, exception}` |
+| ------- | ------ | --------- |
+| `engine.component.registered` | Componente registrato | `{component}` |
+| `component.message.received` | Messaggio ricevuto | `{component, message}` |
+| `state.changed` | Transizione di stato | `{component, from_state, to_state}` |
+| `event.handler.failed` | Eccezione del gestore (modalità continue) | `{event_name, component_name, exception}` |
 
-### Retry Decorator
+### Decoratore di retry
 
 ```python
 from flexiflow.extras.retry import retry_async, RetryConfig
@@ -154,13 +154,13 @@ async def my_handler(data):
     ...
 ```
 
-### Persistence
+### Persistenza
 
-| Feature | JSON | SQLite |
-|---------|------|--------|
-| History | Overwrites | Appends |
-| Retention | N/A | `prune_snapshots_sqlite()` |
-| Best for | Dev/debugging | Production |
+| Funzionalità | JSON | SQLite |
+| --------- | ------ | -------- |
+| Cronologia | Sovrascritture | Aggiunte |
+| Conservazione | N/A | `prune_snapshots_sqlite()` |
+| Ideale per | Sviluppo/debug | Produzione |
 
 ```python
 from flexiflow.extras import save_component, load_snapshot, restore_component
@@ -180,7 +180,7 @@ save_snapshot_sqlite(conn, snapshot)
 latest = load_latest_snapshot_sqlite(conn, "my_component")
 ```
 
-### Config Introspection
+### Introspezione della configurazione
 
 ```python
 from flexiflow import explain
@@ -192,9 +192,9 @@ if result.is_valid:
 
 ---
 
-## Error Handling
+## Gestione degli errori
 
-All exceptions inherit from `FlexiFlowError` with structured messages (What / Why / Fix / Context):
+Tutte le eccezioni ereditano da `FlexiFlowError` con messaggi strutturati (Cosa / Perché / Soluzione / Contesto):
 
 ```
 FlexiFlowError (base)
@@ -215,12 +215,12 @@ except StateError as e:
 
 ---
 
-## Examples
+## Esempi
 
-See [`examples/embedded_app/`](examples/embedded_app/) for a complete working example with custom states, SQLite persistence, observability subscriptions, and retention pruning.
+Consultare [`examples/embedded_app/`](examples/embedded_app/) per un esempio completo e funzionante con stati personalizzati, persistenza SQLite, sottoscrizioni di osservabilità e pruning della conservazione.
 
 ---
 
-## License
+## Licenza
 
 [MIT](LICENSE) -- Copyright (c) 2025-2026 mcp-tool-shop

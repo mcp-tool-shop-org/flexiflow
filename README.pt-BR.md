@@ -25,33 +25,33 @@
     </a>
 </p>
 
-**A small async component engine with events, state machines, and a minimal CLI.**
+**Um pequeno motor de componentes assíncronos com eventos, máquinas de estados e uma CLI minimalista.**
 
 ---
 
-## Why FlexiFlow?
+## Por que FlexiFlow?
 
-Most workflow engines are heavyweight, opinionated, and assume you want a DAG runner.
-FlexiFlow is none of those things. It gives you:
+A maioria dos motores de fluxo de trabalho são complexos, com opiniões pré-definidas e assumem que você deseja um executor de grafos direcionados acíclicos (DAG).
+FlexiFlow não é nada disso. Ele oferece:
 
-- **Components** with declarative rules and pluggable state machines
-- **An async event bus** with priority, filters, and sequential or concurrent delivery
-- **Structured logging** with correlation IDs baked in
-- **Persistence** (JSON for dev, SQLite for production) with snapshot history and pruning
-- **A minimal CLI** so you can demo and debug without writing a harness
-- **Config introspection** (`explain()`) to validate before you run
+- **Componentes** com regras declarativas e máquinas de estados personalizáveis.
+- **Um barramento de eventos assíncrono** com prioridade, filtros e entrega sequencial ou concorrente.
+- **Registro estruturado** com IDs de correlação integrados.
+- **Persistência** (JSON para desenvolvimento, SQLite para produção) com histórico de snapshots e remoção de dados antigos.
+- **Uma CLI minimalista** para que você possa demonstrar e depurar sem escrever um código de teste.
+- **Inspeção da configuração** (`explain()`) para validar antes de executar.
 
-All in under 2,000 lines of pure Python. No heavy dependencies. No magic.
+Tudo isso em menos de 2.000 linhas de código Python puro. Sem dependências pesadas. Sem "mágica".
 
 ---
 
-## Install
+## Instalação
 
 ```bash
 pip install flexiflow
 ```
 
-With optional extras:
+Com extras opcionais:
 
 ```bash
 pip install flexiflow[reload]   # hot-reload with watchfiles
@@ -61,7 +61,7 @@ pip install flexiflow[dev]      # pytest + coverage
 
 ---
 
-## Quick Start
+## Início Rápido
 
 ### CLI
 
@@ -77,7 +77,7 @@ flexiflow handle --config examples/config.yaml complete
 flexiflow update_rules --config examples/config.yaml examples/new_rules.yaml
 ```
 
-### Embedded (Python)
+### Embutido (Python)
 
 ```python
 from flexiflow.engine import FlexiFlowEngine
@@ -92,13 +92,13 @@ await engine.handle_message(component.name, "start")
 await engine.handle_message(component.name, "confirm", content="confirmed")
 ```
 
-You can also set `FLEXIFLOW_CONFIG=/path/to/config.yaml` and omit `--config` from the CLI.
+Você também pode definir `FLEXIFLOW_CONFIG=/path/to/config.yaml` e omitir `--config` da CLI.
 
 ---
 
-## API Overview
+## Visão Geral da API
 
-### Event Bus
+### Barramento de Eventos
 
 ```python
 # Subscribe with priority (1=highest, 5=lowest)
@@ -113,19 +113,19 @@ bus.unsubscribe(handle)
 bus.unsubscribe_all("my_component")
 ```
 
-**Error policies:** `continue` (log and keep going) or `raise` (fail fast).
+**Políticas de erro:** `continue` (registra e continua) ou `raise` (falha rápida).
 
-### State Machines
+### Máquinas de Estados
 
-Built-in message types: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
+Tipos de mensagens integrados: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
 
-Load custom states via dotted paths:
+Carregue estados personalizados através de caminhos com separadores:
 
 ```yaml
 initial_state: "mypkg.states:MyInitialState"
 ```
 
-Or register entire state packs:
+Ou registre pacotes de estados inteiros:
 
 ```yaml
 states:
@@ -135,16 +135,16 @@ states:
 initial_state: InitialState
 ```
 
-### Observability Events
+### Eventos de Observabilidade
 
 | Event | When | Payload |
-|-------|------|---------|
-| `engine.component.registered` | Component registered | `{component}` |
-| `component.message.received` | Message received | `{component, message}` |
-| `state.changed` | State transition | `{component, from_state, to_state}` |
-| `event.handler.failed` | Handler exception (continue mode) | `{event_name, component_name, exception}` |
+| ------- | ------ | --------- |
+| `engine.component.registered` | Componente registrado | `{component}` |
+| `component.message.received` | Mensagem recebida | `{component, message}` |
+| `state.changed` | Transição de estado | `{component, from_state, to_state}` |
+| `event.handler.failed` | Exceção do manipulador (modo continue) | `{event_name, component_name, exception}` |
 
-### Retry Decorator
+### Decorador de Repetição
 
 ```python
 from flexiflow.extras.retry import retry_async, RetryConfig
@@ -154,13 +154,13 @@ async def my_handler(data):
     ...
 ```
 
-### Persistence
+### Persistência
 
-| Feature | JSON | SQLite |
-|---------|------|--------|
-| History | Overwrites | Appends |
-| Retention | N/A | `prune_snapshots_sqlite()` |
-| Best for | Dev/debugging | Production |
+| Recurso | JSON | SQLite |
+| --------- | ------ | -------- |
+| Histórico | Substituições | Adições |
+| Retenção | N/A | `prune_snapshots_sqlite()` |
+| Ideal para | Desenvolvimento/depuração | Produção |
 
 ```python
 from flexiflow.extras import save_component, load_snapshot, restore_component
@@ -180,7 +180,7 @@ save_snapshot_sqlite(conn, snapshot)
 latest = load_latest_snapshot_sqlite(conn, "my_component")
 ```
 
-### Config Introspection
+### Inspeção da Configuração
 
 ```python
 from flexiflow import explain
@@ -192,9 +192,9 @@ if result.is_valid:
 
 ---
 
-## Error Handling
+## Tratamento de Erros
 
-All exceptions inherit from `FlexiFlowError` with structured messages (What / Why / Fix / Context):
+Todas as exceções herdam de `FlexiFlowError` com mensagens estruturadas (O que / Por que / Solução / Contexto):
 
 ```
 FlexiFlowError (base)
@@ -215,12 +215,12 @@ except StateError as e:
 
 ---
 
-## Examples
+## Exemplos
 
-See [`examples/embedded_app/`](examples/embedded_app/) for a complete working example with custom states, SQLite persistence, observability subscriptions, and retention pruning.
+Veja [`examples/embedded_app/`](examples/embedded_app/) para um exemplo completo e funcional com estados personalizados, persistência SQLite, assinaturas de observabilidade e remoção de dados antigos.
 
 ---
 
-## License
+## Licença
 
 [MIT](LICENSE) -- Copyright (c) 2025-2026 mcp-tool-shop

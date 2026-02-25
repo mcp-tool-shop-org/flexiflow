@@ -25,33 +25,33 @@
     </a>
 </p>
 
-**A small async component engine with events, state machines, and a minimal CLI.**
+**イベント、ステートマシン、そして最小限のCLIを備えた、軽量な非同期コンポーネントエンジンです。**
 
 ---
 
-## Why FlexiFlow?
+## なぜFlexiFlowを使うのか？
 
-Most workflow engines are heavyweight, opinionated, and assume you want a DAG runner.
-FlexiFlow is none of those things. It gives you:
+多くのワークフローエンジンは、機能が過剰で、特定の考え方に基づいており、DAG（有向非巡回グラフ）の実行を前提としています。
+FlexiFlowは、そのようなものではありません。FlexiFlowは、以下の機能を提供します。
 
-- **Components** with declarative rules and pluggable state machines
-- **An async event bus** with priority, filters, and sequential or concurrent delivery
-- **Structured logging** with correlation IDs baked in
-- **Persistence** (JSON for dev, SQLite for production) with snapshot history and pruning
-- **A minimal CLI** so you can demo and debug without writing a harness
-- **Config introspection** (`explain()`) to validate before you run
+- **コンポーネント:** 宣言的なルールと、プラグイン可能なステートマシン
+- **非同期イベントバス:** 優先順位、フィルタ、およびシーケンシャルまたは並列配信
+- **構造化されたロギング:** 相関IDを組み込み
+- **永続化:** 開発にはJSON、本番環境にはSQLiteを使用。スナップショット履歴と不要データの削除機能
+- **最小限のCLI:** ハーネスを作成せずにデモやデバッグが可能
+- **設定の検証機能 (`explain()`):** 実行前に設定を検証
 
-All in under 2,000 lines of pure Python. No heavy dependencies. No magic.
+すべて、2000行以下の純粋なPythonで記述されています。重い依存関係はありません。魔法のような機能もありません。
 
 ---
 
-## Install
+## インストール
 
 ```bash
 pip install flexiflow
 ```
 
-With optional extras:
+オプションの追加機能あり。
 
 ```bash
 pip install flexiflow[reload]   # hot-reload with watchfiles
@@ -61,7 +61,7 @@ pip install flexiflow[dev]      # pytest + coverage
 
 ---
 
-## Quick Start
+## クイックスタート
 
 ### CLI
 
@@ -77,7 +77,7 @@ flexiflow handle --config examples/config.yaml complete
 flexiflow update_rules --config examples/config.yaml examples/new_rules.yaml
 ```
 
-### Embedded (Python)
+### 組み込み (Python)
 
 ```python
 from flexiflow.engine import FlexiFlowEngine
@@ -92,13 +92,13 @@ await engine.handle_message(component.name, "start")
 await engine.handle_message(component.name, "confirm", content="confirmed")
 ```
 
-You can also set `FLEXIFLOW_CONFIG=/path/to/config.yaml` and omit `--config` from the CLI.
+`FLEXIFLOW_CONFIG=/path/to/config.yaml` を設定し、CLIからの `--config` オプションを省略することもできます。
 
 ---
 
-## API Overview
+## APIの概要
 
-### Event Bus
+### イベントバス
 
 ```python
 # Subscribe with priority (1=highest, 5=lowest)
@@ -113,19 +113,19 @@ bus.unsubscribe(handle)
 bus.unsubscribe_all("my_component")
 ```
 
-**Error policies:** `continue` (log and keep going) or `raise` (fail fast).
+**エラーポリシー:** `continue` (ログに記録して続行) または `raise` (エラーを発生させてすぐに停止)。
 
-### State Machines
+### ステートマシン
 
-Built-in message types: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
+組み込みメッセージタイプ: `start` (開始), `confirm` (確認), `cancel` (キャンセル), `complete` (完了), `error` (エラー), `acknowledge` (確認)。
 
-Load custom states via dotted paths:
+ドット区切りのパスでカスタムステートをロードできます。
 
 ```yaml
 initial_state: "mypkg.states:MyInitialState"
 ```
 
-Or register entire state packs:
+または、ステートパック全体を登録できます。
 
 ```yaml
 states:
@@ -135,16 +135,16 @@ states:
 initial_state: InitialState
 ```
 
-### Observability Events
+### 監視イベント
 
-| Event | When | Payload |
-|-------|------|---------|
-| `engine.component.registered` | Component registered | `{component}` |
-| `component.message.received` | Message received | `{component, message}` |
-| `state.changed` | State transition | `{component, from_state, to_state}` |
-| `event.handler.failed` | Handler exception (continue mode) | `{event_name, component_name, exception}` |
+| Event | When | ペイロード |
+| ------- | ------ | --------- |
+| `engine.component.registered` | コンポーネント登録 | `{component}` |
+| `component.message.received` | メッセージ受信 | `{component, message}` |
+| `state.changed` | ステート遷移 | `{component, from_state, to_state}` |
+| `event.handler.failed` | ハンドラ例外 (continueモード) | `{event_name, component_name, exception}` |
 
-### Retry Decorator
+### リトライデコレータ
 
 ```python
 from flexiflow.extras.retry import retry_async, RetryConfig
@@ -154,13 +154,13 @@ async def my_handler(data):
     ...
 ```
 
-### Persistence
+### 永続化
 
-| Feature | JSON | SQLite |
-|---------|------|--------|
-| History | Overwrites | Appends |
-| Retention | N/A | `prune_snapshots_sqlite()` |
-| Best for | Dev/debugging | Production |
+| 機能 | JSON | SQLite |
+| --------- | ------ | -------- |
+| 履歴 | 上書き | 追記 |
+| 保持期間 | N/A | `prune_snapshots_sqlite()` |
+| 最適な用途 | 開発/デバッグ | 本番環境 |
 
 ```python
 from flexiflow.extras import save_component, load_snapshot, restore_component
@@ -180,7 +180,7 @@ save_snapshot_sqlite(conn, snapshot)
 latest = load_latest_snapshot_sqlite(conn, "my_component")
 ```
 
-### Config Introspection
+### 設定の検証
 
 ```python
 from flexiflow import explain
@@ -192,9 +192,9 @@ if result.is_valid:
 
 ---
 
-## Error Handling
+## エラー処理
 
-All exceptions inherit from `FlexiFlowError` with structured messages (What / Why / Fix / Context):
+すべての例外は `FlexiFlowError` を継承し、構造化されたメッセージ（何が起きたか / なぜ起きたか / 解決策 / コンテキスト）を含みます。
 
 ```
 FlexiFlowError (base)
@@ -215,12 +215,12 @@ except StateError as e:
 
 ---
 
-## Examples
+## 例
 
-See [`examples/embedded_app/`](examples/embedded_app/) for a complete working example with custom states, SQLite persistence, observability subscriptions, and retention pruning.
+カスタムステート、SQLite永続化、監視サブスクリプション、および不要データの削除機能を含む、完全な動作例については、[`examples/embedded_app/`](examples/embedded_app/) を参照してください。
 
 ---
 
-## License
+## ライセンス
 
 [MIT](LICENSE) -- Copyright (c) 2025-2026 mcp-tool-shop

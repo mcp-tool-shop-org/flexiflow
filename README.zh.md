@@ -25,33 +25,33 @@
     </a>
 </p>
 
-**A small async component engine with events, state machines, and a minimal CLI.**
+**一个小型异步组件引擎，具有事件、状态机和精简的命令行界面。**
 
 ---
 
-## Why FlexiFlow?
+## 为什么选择FlexiFlow？
 
-Most workflow engines are heavyweight, opinionated, and assume you want a DAG runner.
-FlexiFlow is none of those things. It gives you:
+大多数工作流引擎都过于庞大、带有预设的观念，并且假设您需要一个有向图（DAG）执行器。
+FlexiFlow并非如此。它为您提供：
 
-- **Components** with declarative rules and pluggable state machines
-- **An async event bus** with priority, filters, and sequential or concurrent delivery
-- **Structured logging** with correlation IDs baked in
-- **Persistence** (JSON for dev, SQLite for production) with snapshot history and pruning
-- **A minimal CLI** so you can demo and debug without writing a harness
-- **Config introspection** (`explain()`) to validate before you run
+- **组件**，具有声明式规则和可插拔的状态机。
+- **异步事件总线**，具有优先级、过滤器以及顺序或并发的传递方式。
+- **结构化日志**，内置相关性ID。
+- **持久化**（开发环境使用JSON，生产环境使用SQLite），并具有快照历史记录和清理功能。
+- **精简的命令行界面**，让您无需编写测试用例即可进行演示和调试。
+- **配置检查**（`explain()`）功能，可在运行前进行验证。
 
-All in under 2,000 lines of pure Python. No heavy dependencies. No magic.
+所有这些都包含在2000行纯Python代码中。没有过多的依赖。没有魔法。
 
 ---
 
-## Install
+## 安装
 
 ```bash
 pip install flexiflow
 ```
 
-With optional extras:
+带有可选扩展：
 
 ```bash
 pip install flexiflow[reload]   # hot-reload with watchfiles
@@ -61,9 +61,9 @@ pip install flexiflow[dev]      # pytest + coverage
 
 ---
 
-## Quick Start
+## 快速开始
 
-### CLI
+### 命令行界面
 
 ```bash
 # Register a component and start it
@@ -77,7 +77,7 @@ flexiflow handle --config examples/config.yaml complete
 flexiflow update_rules --config examples/config.yaml examples/new_rules.yaml
 ```
 
-### Embedded (Python)
+### 嵌入式（Python）
 
 ```python
 from flexiflow.engine import FlexiFlowEngine
@@ -92,13 +92,13 @@ await engine.handle_message(component.name, "start")
 await engine.handle_message(component.name, "confirm", content="confirmed")
 ```
 
-You can also set `FLEXIFLOW_CONFIG=/path/to/config.yaml` and omit `--config` from the CLI.
+您还可以设置 `FLEXIFLOW_CONFIG=/path/to/config.yaml` 并从命令行界面中省略 `--config` 参数。
 
 ---
 
-## API Overview
+## API 概览
 
-### Event Bus
+### 事件总线
 
 ```python
 # Subscribe with priority (1=highest, 5=lowest)
@@ -113,19 +113,19 @@ bus.unsubscribe(handle)
 bus.unsubscribe_all("my_component")
 ```
 
-**Error policies:** `continue` (log and keep going) or `raise` (fail fast).
+**错误策略：** `continue`（记录错误并继续）或 `raise`（快速失败）。
 
-### State Machines
+### 状态机
 
-Built-in message types: `start`, `confirm`, `cancel`, `complete`, `error`, `acknowledge`.
+内置消息类型：`start`（开始）、`confirm`（确认）、`cancel`（取消）、`complete`（完成）、`error`（错误）、`acknowledge`（确认）。
 
-Load custom states via dotted paths:
+通过点分隔路径加载自定义状态：
 
 ```yaml
 initial_state: "mypkg.states:MyInitialState"
 ```
 
-Or register entire state packs:
+或者注册整个状态包：
 
 ```yaml
 states:
@@ -135,16 +135,16 @@ states:
 initial_state: InitialState
 ```
 
-### Observability Events
+### 可观察性事件
 
-| Event | When | Payload |
-|-------|------|---------|
-| `engine.component.registered` | Component registered | `{component}` |
-| `component.message.received` | Message received | `{component, message}` |
-| `state.changed` | State transition | `{component, from_state, to_state}` |
-| `event.handler.failed` | Handler exception (continue mode) | `{event_name, component_name, exception}` |
+| Event | When | 有效载荷 |
+| ------- | ------ | --------- |
+| `engine.component.registered` | 组件已注册 | `{component}` |
+| `component.message.received` | 接收到消息 | `{component, message}` |
+| `state.changed` | 状态转换 | `{component, from_state, to_state}` |
+| `event.handler.failed` | 处理程序异常（继续模式） | `{event_name, component_name, exception}` |
 
-### Retry Decorator
+### 重试装饰器
 
 ```python
 from flexiflow.extras.retry import retry_async, RetryConfig
@@ -154,13 +154,13 @@ async def my_handler(data):
     ...
 ```
 
-### Persistence
+### 持久化
 
-| Feature | JSON | SQLite |
-|---------|------|--------|
-| History | Overwrites | Appends |
-| Retention | N/A | `prune_snapshots_sqlite()` |
-| Best for | Dev/debugging | Production |
+| 特性 | JSON | SQLite |
+| --------- | ------ | -------- |
+| 历史记录 | 覆盖 | 追加 |
+| 保留 | N/A | `prune_snapshots_sqlite()` |
+| 最适合 | 开发/调试 | 生产环境 |
 
 ```python
 from flexiflow.extras import save_component, load_snapshot, restore_component
@@ -180,7 +180,7 @@ save_snapshot_sqlite(conn, snapshot)
 latest = load_latest_snapshot_sqlite(conn, "my_component")
 ```
 
-### Config Introspection
+### 配置检查
 
 ```python
 from flexiflow import explain
@@ -192,9 +192,9 @@ if result.is_valid:
 
 ---
 
-## Error Handling
+## 错误处理
 
-All exceptions inherit from `FlexiFlowError` with structured messages (What / Why / Fix / Context):
+所有异常都继承自 `FlexiFlowError`，并包含结构化消息（原因/为什么/解决方案/上下文）。
 
 ```
 FlexiFlowError (base)
@@ -215,12 +215,12 @@ except StateError as e:
 
 ---
 
-## Examples
+## 示例
 
-See [`examples/embedded_app/`](examples/embedded_app/) for a complete working example with custom states, SQLite persistence, observability subscriptions, and retention pruning.
+请参阅 [`examples/embedded_app/`](examples/embedded_app/) 目录，其中包含一个完整的示例，具有自定义状态、SQLite持久化、可观察性订阅和保留清理功能。
 
 ---
 
-## License
+## 许可证
 
-[MIT](LICENSE) -- Copyright (c) 2025-2026 mcp-tool-shop
+[MIT](LICENSE) -- 版权所有 (c) 2025-2026 mcp-tool-shop
