@@ -3,9 +3,7 @@
 </p>
 
 <p align="center">
-  
-            <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/flexiflow/readme.png"
-           alt="FlexiFlow logo" width="400">
+  <img src="logo.png" alt="FlexiFlow logo" width="400">
 </p>
 
 <p align="center">
