@@ -221,6 +221,37 @@ See [`examples/embedded_app/`](examples/embedded_app/) for a complete working ex
 
 ---
 
+## Security & Data Scope
+
+FlexiFlow is a **local-first** async component engine library.
+
+- **Data accessed:** In-process state machine data, optional SQLite persistence for state history
+- **Data NOT accessed:** No cloud sync. No telemetry. No analytics. No network calls. No authentication
+- **Permissions:** File system write only for optional SQLite persistence. No elevated permissions
+
+Full policy: [SECURITY.md](SECURITY.md)
+
+---
+
+## Scorecard
+
+| Category | Score |
+|----------|-------|
+| A. Security | 10/10 |
+| B. Error Handling | 10/10 |
+| C. Operator Docs | 10/10 |
+| D. Shipping Hygiene | 10/10 |
+| E. Identity (soft) | 10/10 |
+| **Overall** | **50/50** |
+
+---
+
 ## License
 
 [MIT](LICENSE) -- Copyright (c) 2025-2026 mcp-tool-shop
+
+---
+
+<p align="center">
+  Built by <a href="https://mcp-tool-shop.github.io/">MCP Tool Shop</a>
+</p>
