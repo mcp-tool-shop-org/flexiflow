@@ -14,7 +14,7 @@ export const config: SiteConfig = {
     headlineAccent: 'Async components, done right.',
     description: 'A lightweight async component engine with events, state machines, persistence, and a minimal CLI. Under 2,000 lines of pure Python.',
     primaryCta: { href: '#usage', label: 'Get started' },
-    secondaryCta: { href: '#features', label: 'Learn more' },
+    secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
     previews: [
       { label: 'Install', code: 'pip install flexiflow' },
       { label: 'Create', code: "engine = FlexiFlowEngine()" },
