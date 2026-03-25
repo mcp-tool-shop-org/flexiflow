@@ -58,3 +58,31 @@ def test_cli_missing_config_fails():
     r = run_cli("register", env=env)
     assert r.returncode != 0
     assert "No config provided" in r.stderr or "No config provided" in r.stdout
+
+
+def test_cli_version():
+    """--version prints semver string."""
+    r = run_cli("--version")
+    assert r.returncode == 0
+    import re
+    assert re.match(r"flexiflow \d+\.\d+\.\d+", r.stdout.strip())
+
+
+def test_cli_diagnose_text():
+    """diagnose subcommand prints environment info."""
+    r = run_cli("diagnose")
+    assert r.returncode == 0
+    assert "FlexiFlow environment:" in r.stdout
+    assert "package.version" in r.stdout
+    assert "python.version" in r.stdout
+
+
+def test_cli_diagnose_json():
+    """diagnose --json outputs valid JSON with expected structure."""
+    import json
+    r = run_cli("diagnose", "--json")
+    assert r.returncode == 0
+    data = json.loads(r.stdout)
+    assert "ok" in data
+    assert "checks" in data
+    assert any(c["check"] == "package.version" for c in data["checks"])
