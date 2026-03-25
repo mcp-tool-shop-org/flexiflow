@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-03-25
+
+### Fixed
+- Aligned `__version__` with pyproject.toml (was 0.4.1, now matches)
+
+### Added
+- `--version` / `-V` flag on CLI
+- `diagnose` subcommand with `--json` output for environment health checks
+- 3 new CLI tests (version, diagnose text, diagnose JSON)
+
 ## [1.0.0] - 2026-02-27
 
 ### Added
